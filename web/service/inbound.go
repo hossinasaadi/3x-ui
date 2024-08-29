@@ -126,6 +126,21 @@ func (s *InboundService) checkEmailsExistForClients(clients []model.Client) (str
 	}
 	return "", nil
 }
+func (s *InboundService) removeExistClientByEmails(clients []model.Client) ([]model.Client, error) {
+	allEmails, err := s.getAllEmails()
+	if err != nil {
+		return []model.Client{}, err
+	}
+	var newClients = []model.Client{}
+	for _, client := range clients {
+		if client.Email != "" {
+			if !s.contains(allEmails, client.Email) {
+				newClients = append(newClients, client)
+			}
+		}
+	}
+	return newClients, nil
+}
 
 func (s *InboundService) checkEmailExistForInbound(inbound *model.Inbound) (string, error) {
 	clients, err := s.GetClients(inbound)
@@ -405,7 +420,7 @@ func (s *InboundService) updateClientTraffics(tx *gorm.DB, oldInbound *model.Inb
 	return nil
 }
 
-func (s *InboundService) AddInboundClient(data *model.Inbound) (bool, error) {
+func (s *InboundService) AddInboundClient(data *model.Inbound, isBulk bool) (bool, error) {
 	clients, err := s.GetClients(data)
 	if err != nil {
 		return false, err
@@ -418,14 +433,24 @@ func (s *InboundService) AddInboundClient(data *model.Inbound) (bool, error) {
 	}
 
 	interfaceClients := settings["clients"].([]interface{})
-	existEmail, err := s.checkEmailsExistForClients(clients)
-	if err != nil {
-		return false, err
+	if !isBulk {
+		existEmail, err := s.checkEmailsExistForClients(clients)
+		if err != nil {
+			return false, err
+		}
+		if existEmail != "" {
+			return false, common.NewError("Duplicate email:", existEmail)
+		}
+	} else {
+		newClients, err := s.removeExistClientByEmails(clients)
+		if err != nil {
+			return false, err
+		}
+		if len(newClients) == 0 {
+			return false, common.NewError("Epmty clients:", newClients)
+		}
+		clients = newClients
 	}
-	if existEmail != "" {
-		return false, common.NewError("Duplicate email:", existEmail)
-	}
-
 	oldInbound, err := s.GetInbound(data.Id)
 	if err != nil {
 		return false, err

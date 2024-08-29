@@ -33,6 +33,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/clientIps/:email", a.getClientIps)
 	g.POST("/clearClientIps/:email", a.clearClientIps)
 	g.POST("/addClient", a.addInboundClient)
+	g.POST("/addBulkClient", a.addInboundBulkClient)
 	g.POST("/:id/delClient/:clientId", a.delInboundClient)
 	g.POST("/updateClient/:clientId", a.updateInboundClient)
 	g.POST("/:id/resetClientTraffic/:email", a.resetClientTraffic)
@@ -179,7 +180,27 @@ func (a *InboundController) addInboundClient(c *gin.Context) {
 
 	needRestart := true
 
-	needRestart, err = a.inboundService.AddInboundClient(data)
+	needRestart, err = a.inboundService.AddInboundClient(data, false)
+	if err != nil {
+		jsonMsg(c, "Something went wrong!", err)
+		return
+	}
+	jsonMsg(c, "Client(s) added", nil)
+	if needRestart {
+		a.xrayService.SetToNeedRestart()
+	}
+}
+func (a *InboundController) addInboundBulkClient(c *gin.Context) {
+	data := &model.Inbound{}
+	err := c.ShouldBind(data)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.update"), err)
+		return
+	}
+
+	needRestart := true
+
+	needRestart, err = a.inboundService.AddInboundClient(data, true)
 	if err != nil {
 		jsonMsg(c, "Something went wrong!", err)
 		return
