@@ -29,6 +29,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 		Path    string
 		Handler gin.HandlerFunc
 	}{
+		{"GET", "/xrayStatus", a.inboundController.getXrayStatus},
 		{"GET", "/createbackup", a.createBackup},
 		{"GET", "/list", a.inboundController.getInbounds},
 		{"GET", "/get/:id", a.inboundController.getInbound},

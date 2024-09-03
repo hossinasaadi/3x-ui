@@ -44,6 +44,11 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/onlines", a.onlines)
 }
 
+func (a *InboundController) getXrayStatus(c *gin.Context) {
+	status := map[string]any{"status": a.xrayService.IsXrayRunning(), "error": a.xrayService.GetXrayErr(), "version": a.xrayService.GetXrayVersion()}
+	jsonObj(c, status, nil)
+}
+
 func (a *InboundController) getInbounds(c *gin.Context) {
 	user := session.GetLoginUser(c)
 	inbounds, err := a.inboundService.GetInbounds(user.Id)
