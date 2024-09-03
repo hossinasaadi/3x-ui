@@ -45,7 +45,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 }
 
 func (a *InboundController) getXrayStatus(c *gin.Context) {
-	status := map[string]any{"status": a.xrayService.IsXrayRunning(), "error": a.xrayService.GetXrayErr(), "version": a.xrayService.GetXrayVersion()}
+	status := map[string]any{"isRunning": a.xrayService.IsXrayRunning(), "error": a.xrayService.GetXrayErr(), "version": a.xrayService.GetXrayVersion()}
 	jsonObj(c, status, nil)
 }
 
